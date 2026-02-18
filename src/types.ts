@@ -12,3 +12,18 @@ export interface Config {
   trend: string;
   reverseTrend: boolean;
 }
+
+export const DEFAULT_CONFIG: Config = {
+  tableId: '',
+  viewId: '',
+  fieldId: '',
+  title: '指标名称',
+  unit: '%',
+  subText: '目标值: 5.5%',
+  themeColor: '#3b82f6',
+  enableThreshold: true,
+  threshold: 5.5,
+  logic: 'low_good',
+  trend: '+0.32%',
+  reverseTrend: false,
+};

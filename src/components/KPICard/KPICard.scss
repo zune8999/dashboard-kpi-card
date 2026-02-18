@@ -2,62 +2,45 @@
   width: 380px;
   padding: 24px;
   border-radius: 12px;
-  border: 1px solid;
+  border: 1px solid var(--semi-color-border);
   border-left-width: 6px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  background: var(--semi-color-bg-0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.kpi-card.light {
-  background: #fff;
-  border-color: #e2e8f0;
-}
-
-.kpi-card.dark {
-  background: rgba(30, 41, 59, 0.9);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
-.header {
+.kpi-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
 
-.label {
+.kpi-label {
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  color: var(--semi-color-text-2);
 }
 
-.kpi-card.light .label {
-  color: #64748b;
-}
-
-.kpi-card.dark .label {
-  color: #94a3b8;
-}
-
-.trend {
+.kpi-trend {
   font-size: 13px;
   font-weight: bold;
   padding: 4px 8px;
   border-radius: 4px;
 }
 
-.trend.up {
+.kpi-trend.up {
   color: #10b981;
   background: rgba(16, 185, 129, 0.1);
 }
 
-.trend.down {
+.kpi-trend.down {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
 }
 
-.value-row {
+.kpi-value-row {
   font-size: 48px;
   font-weight: 800;
   line-height: 1;
@@ -66,65 +49,48 @@
   align-items: baseline;
 }
 
-.unit {
+.kpi-value {
+  color: var(--semi-color-text-0);
+}
+
+.kpi-unit {
   font-size: 16px;
   font-weight: 500;
   margin-left: 8px;
+  color: var(--semi-color-text-2);
 }
 
-.kpi-card.light .unit {
-  color: #64748b;
-}
-
-.kpi-card.dark .unit {
-  color: #94a3b8;
-}
-
-.footer {
+.kpi-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-top: 16px;
-  border-top: 1px solid;
+  border-top: 1px solid var(--semi-color-border);
 }
 
-.kpi-card.light .footer {
-  border-color: #e2e8f0;
-}
-
-.kpi-card.dark .footer {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.sub {
+.kpi-sub {
   font-size: 12px;
+  color: var(--semi-color-text-2);
 }
 
-.kpi-card.light .sub {
-  color: #64748b;
-}
-
-.kpi-card.dark .sub {
-  color: #94a3b8;
-}
-
-.badge {
+.kpi-badge {
   font-size: 12px;
   font-weight: bold;
   padding: 4px 10px;
   border-radius: 4px;
 }
 
-.badge.default {
-  background: rgba(128, 128, 128, 0.1);
+.kpi-badge.default {
+  background: var(--semi-color-fill-0);
+  color: var(--semi-color-text-2);
 }
 
-.badge.safe {
+.kpi-badge.safe {
   background: rgba(16, 185, 129, 0.15);
   color: #059669;
 }
 
-.badge.danger {
+.kpi-badge.danger {
   background: rgba(239, 68, 68, 0.15);
   color: #dc2626;
 }

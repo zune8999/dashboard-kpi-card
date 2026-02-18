@@ -1,133 +1,80 @@
-import { useEffect, useState, useCallback } from 'react';
-import { dashboard, DashboardState, bitable, ThemeModeType } from '@lark-base-open/js-sdk';
-import { ConfigPanel } from './components/ConfigPanel';
-import { KPICard } from './components/KPICard';
-import { Loading } from './components/Loading';
-import type { Config } from './types';
-import './App.css';
+import { dashboard, DashboardState } from "@lark-base-open/js-sdk";
+import "@lark-base-open/js-sdk/dist/style/dashboard.css";
+import { useState, useEffect } from "react";
+import { useTheme } from "./hooks";
+import { ConfigPanel } from "./components/ConfigPanel/ConfigPanel";
+import { KPICard } from "./components/KPICard/KPICard";
+import { fetchData } from "./services/dataService";
+import { DEFAULT_CONFIG, type Config } from "./types";
+import "./App.scss";
 
-const defaultConfig: Config = {
-  tableId: '',
-  viewId: '',
-  fieldId: '',
-  title: '指标名称',
-  unit: '%',
-  subText: '目标值: 5.5%',
-  themeColor: '#3b82f6',
-  enableThreshold: true,
-  threshold: 5.5,
-  logic: 'low_good',
-  trend: '+0.32%',
-  reverseTrend: false,
-};
+export default function App() {
+  const { bgColor } = useTheme();
+  const isConfig =
+    dashboard.state === DashboardState.Config ||
+    dashboard.state === DashboardState.Create;
 
-function App() {
-  const [state, setState] = useState<DashboardState>(DashboardState.Creating);
-  const [config, setConfig] = useState<Config>(defaultConfig);
-  const [data, setData] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [theme, setTheme] = useState<ThemeModeType>(ThemeModeType.LIGHT);
-
-  // 初始化主题
+  // 配置状态
+  const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
+  
+  // 从飞书加载配置
   useEffect(() => {
-    const initTheme = async () => {
-      const res = await dashboard.getTheme();
-      setTheme(res.theme);
-      document.body.setAttribute('theme-mode', res.theme.toLowerCase());
-    };
-    initTheme();
-
-    dashboard.onThemeChange((res) => {
-      setTheme(res.data.theme);
-      document.body.setAttribute('theme-mode', res.data.theme.toLowerCase());
-    });
-  }, []);
-
-  // 初始化
-  useEffect(() => {
-    const init = async () => {
-      const currentState = await dashboard.getState();
-      setState(currentState);
-
-      if (currentState !== DashboardState.Create) {
-        const savedConfig = await dashboard.getConfig();
-        if (savedConfig) {
-          setConfig((prev) => ({ ...prev, ...savedConfig }));
-        }
-        await loadData();
+    if (dashboard.state === DashboardState.Create) return;
+    
+    dashboard.getConfig().then((data) => {
+      if (data?.customConfig) {
+        setConfig((prev) => ({ ...prev, ...data.customConfig }));
       }
-
-      // 告知服务端渲染完成
-      setTimeout(() => {
-        dashboard.setRendered();
-      }, 500);
-    };
-
-    init();
-
-    // 监听状态变化
-    dashboard.onStateChange((event) => {
-      setState(event.data.state);
     });
-
-    // 监听配置变化
-    dashboard.onConfigChange((event) => {
-      const newConfig = event.data;
-      setConfig((prev) => ({ ...prev, ...newConfig }));
-      loadData();
+    
+    const off = dashboard.onConfigChange((r) => {
+      if (r.data?.customConfig) {
+        setConfig((prev) => ({ ...prev, ...r.data.customConfig }));
+      }
     });
+    
+    return () => off();
   }, []);
 
-  const loadData = useCallback(async () => {
-    if (state === DashboardState.Create) return;
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const result = await dashboard.getData();
-      const value = calculateValue(result as any);
-      setData(value);
-    } catch (err: any) {
-      setError('数据加载失败: ' + err.message);
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [state]);
-
-  const calculateValue = (result: any): number => {
-    if (!result?.data?.length) return 0;
-    const values = result.data.map((row: any) => {
-      const val = Array.isArray(row) ? row[0] : row;
-      return parseFloat(val) || 0;
+  // 数据加载
+  const [data, setData] = useState<number | null>(null);
+  useEffect(() => {
+    if (!config.tableId || !config.fieldId) return;
+    
+    fetchData(config.tableId, config.fieldId).then((values) => {
+      if (values.length > 0) {
+        // 取最新值
+        setData(values[values.length - 1]);
+      }
     });
-    return values[values.length - 1] || 0;
-  };
+  }, [config.tableId, config.fieldId]);
 
-  const updateConfig = async (newConfig: Partial<Config>) => {
-    const updated = { ...config, ...newConfig };
-    setConfig(updated);
-    await dashboard.setConfig(updated);
-  };
+  // 配置更新后通知渲染完成
+  useEffect(() => {
+    const timer = setTimeout(() => dashboard.setRendered(), 3000);
+    return () => clearTimeout(timer);
+  }, [data]);
 
-  const isDark = theme === ThemeModeType.DARK;
-  const isConfig = state === DashboardState.Config || state === DashboardState.Create;
+  const handleSaveConfig = (newConfig: Config) => {
+    setConfig(newConfig);
+    dashboard.saveConfig({ 
+      customConfig: newConfig, 
+      dataConditions: [] 
+    });
+  };
 
   return (
-    <div className={`main ${isConfig ? 'main-config' : ''} ${isDark ? 'dark' : 'light'}`}>
+    <main style={{ backgroundColor: bgColor, width: "100%", height: "100%" }}>
       <div className="content">
-        {loading && <Loading />}
-        {error && <div className="error">{error}</div>}
-        {!loading && !error && <KPICard config={config} data={data} isDark={isDark} />}
+        <KPICard config={config} data={data} />
       </div>
       
       {isConfig && (
-        <ConfigPanel config={config} onChange={updateConfig} isDark={isDark} />
+        <ConfigPanel 
+          config={config} 
+          onSave={handleSaveConfig} 
+        />
       )}
-    </div>
+    </main>
   );
 }
-
-export default App;
