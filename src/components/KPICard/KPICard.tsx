@@ -16,6 +16,20 @@ function formatValue(value: number, decimals: number, numberUnit: NumberUnit): s
   return v.toLocaleString('zh-CN', { maximumFractionDigits: decimals, minimumFractionDigits: 0 }) + suffix;
 }
 
+// 完成率格式化：去掉 .0 尾数，超过 999% 显示 >999%
+function formatRate(rate: number): string {
+  if (rate > 999.9) return '>999%';
+  const fixed = rate.toFixed(1);
+  return (fixed.endsWith('.0') ? fixed.slice(0, -2) : fixed) + '%';
+}
+
+// 量级乘数：用于将"显示单位"换算回原始数值
+function getUnitMultiplier(numberUnit: NumberUnit): number {
+  if (numberUnit === 'wan') return 10000;
+  if (numberUnit === 'yi') return 100000000;
+  return 1;
+}
+
 export function KPICard({ config, data, targetData }: KPICardProps) {
   const value = data ?? 0;
 
@@ -35,14 +49,25 @@ export function KPICard({ config, data, targetData }: KPICardProps) {
   const trendClass = trendUp !== config.reverseTrend ? 'up' : 'down';
 
   // 目标追踪
+  // 固定值时：用户在配置面板输入的是"显示单位"（如15亿），需乘以量级乘数还原为原始数值
+  const unitMultiplier = getUnitMultiplier(config.numberUnit);
   const effectiveTarget = config.enableTarget
-    ? (config.targetSource === 'fixed' ? config.targetValue : targetData)
+    ? (config.targetSource === 'fixed' ? config.targetValue * unitMultiplier : targetData)
     : null;
-  const completionRate = effectiveTarget !== null && effectiveTarget !== 0
+
+  // target <= 0 时隐藏（无业务意义）
+  const completionRate = effectiveTarget !== null && effectiveTarget > 0
     ? (value / effectiveTarget) * 100
     : null;
-  const progressPct = completionRate !== null ? Math.min(Math.max(completionRate, 0), 100) : 0;
-  const showTarget = config.enableTarget && effectiveTarget !== null && completionRate !== null;
+
+  const showTarget = config.enableTarget && effectiveTarget !== null && effectiveTarget > 0 && completionRate !== null;
+
+  // 进度条分段：超额时用双色（主题色 + 警告色）
+  const isOverflow = completionRate !== null && completionRate > 100;
+  const baseSegment = completionRate !== null
+    ? (isOverflow ? (100 / completionRate) * 100 : Math.min(completionRate, 100))
+    : 0;
+  const overflowSegment = isOverflow ? ((completionRate! - 100) / completionRate!) * 100 : 0;
 
   const hasFooter = config.subText || config.enableThreshold;
 
@@ -70,7 +95,9 @@ export function KPICard({ config, data, targetData }: KPICardProps) {
           <div className="kpi-target-row">
             <span className="kpi-completion-rate">
               {config.completionLabel}&nbsp;
-              <strong>{completionRate!.toFixed(1)}%</strong>
+              <strong className={isOverflow ? 'overflow' : ''}>
+                {formatRate(completionRate!)}
+              </strong>
             </span>
             <span className="kpi-target-value">
               目标&nbsp;{formatValue(effectiveTarget!, config.decimals, config.numberUnit)}
@@ -81,8 +108,14 @@ export function KPICard({ config, data, targetData }: KPICardProps) {
             <div className="kpi-progress-bar">
               <div
                 className="kpi-progress-fill"
-                style={{ width: `${progressPct}%`, backgroundColor: config.themeColor }}
+                style={{ width: `${baseSegment}%`, backgroundColor: config.themeColor }}
               />
+              {isOverflow && (
+                <div
+                  className="kpi-progress-overflow"
+                  style={{ width: `${overflowSegment}%` }}
+                />
+              )}
             </div>
           )}
         </div>

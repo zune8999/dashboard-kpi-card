@@ -97,6 +97,10 @@
   strong {
     color: var(--semi-color-text-0);
     font-weight: 700;
+
+    &.overflow {
+      color: var(--semi-color-warning);
+    }
   }
 }
 
@@ -114,12 +118,22 @@
   border-radius: 2px;
   background: var(--semi-color-fill-1);
   overflow: hidden;
+  display: flex;
 }
 
 .kpi-progress-fill {
   height: 100%;
-  border-radius: 2px;
+  border-radius: 2px 0 0 2px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.kpi-progress-overflow {
+  height: 100%;
+  border-radius: 0 2px 2px 0;
+  background-color: var(--semi-color-warning);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
 }
 
 // ── 底部区域 ───────────────────────────────────────────────

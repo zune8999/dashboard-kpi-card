@@ -156,16 +156,19 @@ export function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 ]}
               />
 
-              {localConfig.targetSource === 'fixed' ? (
-                <Form.InputNumber
-                  field="targetValue"
-                  label="目标值"
-                  value={localConfig.targetValue}
-                  onChange={(v) => set({ targetValue: v as number })}
-                  step={1}
-                  placeholder="请输入目标数值"
-                />
-              ) : (
+              {localConfig.targetSource === 'fixed' ? (() => {
+                const unitHint = localConfig.numberUnit === 'wan' ? '万' : localConfig.numberUnit === 'yi' ? '亿' : '';
+                return (
+                  <Form.InputNumber
+                    field="targetValue"
+                    label={unitHint ? `目标值（单位：${unitHint}）` : '目标值'}
+                    value={localConfig.targetValue}
+                    onChange={(v) => set({ targetValue: v as number })}
+                    step={1}
+                    placeholder={unitHint ? `如 15 表示目标 15${unitHint}` : '请输入目标数值'}
+                  />
+                );
+              })() : (
                 <>
                   <Form.Select
                     field="targetFieldId"
