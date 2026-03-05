@@ -1,0 +1,15 @@
+main {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.loading-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--semi-color-text-2);
+  font-size: 14px;
+}
