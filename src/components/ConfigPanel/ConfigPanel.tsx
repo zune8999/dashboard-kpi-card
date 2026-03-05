@@ -37,6 +37,13 @@ export function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const set = (patch: Partial<Config>) =>
     setLocalConfig((prev) => ({ ...prev, ...patch }));
 
+  // 兜底：若 getConfig() 在 ConfigPanel mount 之后才返回（极少数情况），
+  // 此 effect 负责将最新 config 同步到本地状态
+  useEffect(() => {
+    setLocalConfig(config);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.tableId, config.fieldId, config.aggregation]);
+
   useEffect(() => {
     getTableList().then(setTables).catch(console.error);
   }, []);

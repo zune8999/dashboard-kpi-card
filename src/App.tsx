@@ -27,18 +27,28 @@ export default function App() {
 
   // 从飞书加载配置
   useEffect(() => {
-    if (dashboard.state === DashboardState.Create) return;
-
-    dashboard.getConfig().then((data) => {
-      if (data?.customConfig) {
-        setConfig((prev) => ({ ...prev, ...data.customConfig }));
-      }
+    if (dashboard.state === DashboardState.Create) {
+      // Create 态没有已保存配置，直接标记完成
       setConfigLoaded(true);
-    });
+      return;
+    }
+
+    dashboard
+      .getConfig()
+      .then((data) => {
+        // data 结构：{ customConfig: {...}, dataConditions: [] }
+        const saved = data?.customConfig;
+        if (saved && typeof saved === 'object' && Object.keys(saved).length > 0) {
+          setConfig((prev) => ({ ...prev, ...saved }));
+        }
+      })
+      .catch((err) => console.error('[KPICard] getConfig failed:', err))
+      .finally(() => setConfigLoaded(true)); // 无论成功与否，都解除 ConfigPanel 阻塞
 
     const off = dashboard.onConfigChange((r) => {
-      if (r.data?.customConfig) {
-        setConfig((prev) => ({ ...prev, ...r.data.customConfig }));
+      const saved = r.data?.customConfig;
+      if (saved && typeof saved === 'object') {
+        setConfig((prev) => ({ ...prev, ...saved }));
       }
     });
 
@@ -99,7 +109,15 @@ export default function App() {
   if (isConfig) {
     return (
       <main style={{ backgroundColor: bgColor, width: "100%", height: "100%", overflow: "auto" }}>
-        {configLoaded && <ConfigPanel config={config} onSave={handleSaveConfig} />}
+        {configLoaded && (
+          // key=tableId：当 getConfig() 异步加载完成、tableId 从空变为真实值时
+          // 强制重建 ConfigPanel，确保 useState(config) 拿到最新配置
+          <ConfigPanel
+            key={config.tableId || '__empty__'}
+            config={config}
+            onSave={handleSaveConfig}
+          />
+        )}
       </main>
     );
   }
